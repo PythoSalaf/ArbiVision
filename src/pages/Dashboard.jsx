@@ -75,12 +75,7 @@ const Dashboard = () => {
         <div className="w-full border border-[#dadada] rounded-lg py-2 mt-6">
           <div className="w-[95%] mx-auto">
             <div className="w-full flex items-center gap-x-6">
-              {[
-                "new wallet",
-                "active wallet",
-                "top wallet",
-                "token distribution",
-              ].map((tab) => (
+              {["new wallet", "active wallet", "top wallet"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -101,9 +96,6 @@ const Dashboard = () => {
               )}
               {activeTab === "top wallet" && (
                 <div className="">Top Wallets</div>
-              )}
-              {activeTab === "token distribution" && (
-                <div className="">Token Distribution</div>
               )}
             </div>
           </div>
