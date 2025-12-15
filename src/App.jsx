@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import {
   Dashboard,
   DashboardLayout,
+  Fauset,
   Home,
   LandingLayout,
   Portfolio,
@@ -30,6 +31,10 @@ const routes = [
       {
         path: "swap",
         element: <Swap />,
+      },
+      {
+        path: "fauset",
+        element: <Fauset />,
       },
       {
         path: "portfolio",
