@@ -6,7 +6,7 @@ import { Link } from "react-router";
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="w-full relative">
+    <div className="w-full relative bg-[#040705] z-50">
       <div className="w-[96%]  mx-auto flex items-center justify-between">
         <Link to="/" className="flex items-center gap-x-1">
           <PiBandaidsLight
