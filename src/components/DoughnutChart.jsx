@@ -15,16 +15,17 @@ const DoughnutChart = ({ data, title }) => {
         formatter: "{b}: {c} ({d}%)",
       },
       legend: {
-        bottom: 0,
-        left: "center",
-        itemWidth: 12,
-        itemHeight: 12,
+        top: 0,
+        left: "right",
+        itemWidth: 20,
+        itemHeight: 16,
       },
       series: [
         {
           name: title || "Distribution",
           type: "pie",
-          radius: ["55%", "75%"], // doughnut thickness
+          center: ["50%", "50%"],
+          radius: ["40%", "60%"], // doughnut thickness
           avoidLabelOverlap: false,
           padAngle: 3, // spacing between slices
           itemStyle: {

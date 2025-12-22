@@ -30,23 +30,30 @@ const Sidebar = () => {
             Portfolio
           </NavLink>
           <NavLink
+            to="/dashboard/fauset"
+            className={({ isActive }) => `${isActive ? active : inactive}`}
+          >
+            <PiBandaidsLight size={24} className="inline-block " />
+            Faucet
+          </NavLink>
+          <NavLink
             to="/dashboard/swap"
             className={({ isActive }) => `${isActive ? active : inactive}`}
           >
             <IoMdSwap size={24} className="inline-block " />
             Swap
           </NavLink>
-          <NavLink
-            to="/dashboard/fauset"
-            className={({ isActive }) => `${isActive ? active : inactive}`}
-          >
-            <PiBandaidsLight size={24} className="inline-block " />
-            Fauset
-          </NavLink>
         </div>
-        <div className="w-full mt-36">
-          <div className="w-full rounded-md bg-white flex items-center gap-x-3"></div>
-          <div className="bg-white text-black rounded-md cursor-pointer md:text-sm lg:text-base py-1 px-4 font-semibold flex items-center gap-x-4 ">
+        <div className="w-full mt-48">
+          <div className="w-full rounded-md bg-white  text-black">
+            <div className="w-[90%] mx-auto flex items-center py-3 gap-x-3 px-2">
+              <FaWallet size={24} className="inline-block " />
+              <h4 className="font-semibold md:text-sm lg:text-base">
+                0x7A......91E
+              </h4>
+            </div>
+          </div>
+          <div className="bg-white text-black rounded-md mt-4 cursor-pointer md:text-sm lg:text-base py-1 px-4 font-semibold flex items-center gap-x-4 ">
             <TbLogout size={24} className="inline-block " />
             <button className="cursor-pointer">Logout</button>
           </div>
