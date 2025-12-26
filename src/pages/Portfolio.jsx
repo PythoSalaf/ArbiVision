@@ -1,288 +1,200 @@
-import { useState } from "react";
-import { DoughnutChart, Table } from "../components";
+import { useMemo, useState } from "react";
+
+/* ===================== COMPONENTS & ASSETS ===================== */
+import { DoughnutChart, Pagination, Table } from "../components";
 import { NFT } from "../assets";
-import { useAccountBalanceQuery } from "../feature/DuneSlice";
+
+/* ===================== API HOOKS ===================== */
+import { useGetDefiPositionQuery } from "../feature/DuneSlice";
+
+import {
+  useGetBalancesQuery,
+  useGetTransactionHistoryQuery,
+  useLazyGetBalancesQuery,
+  useLazyGetTransactionHistoryQuery,
+} from "../feature/CovalentSlice";
+
+/* =============================================================== */
+
+const ITEMS_PER_PAGE = 10;
 
 const Portfolio = () => {
+  /* ===================== STATE ===================== */
   const [isConnect] = useState(true);
   const [activeTabs, setActiveTabs] = useState("token");
-  const { data, isLoading, isError } = useAccountBalanceQuery(
-    "0x0f85f1523666118eb752eec4a6f763776f4b5693"
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [singleCurrentPage, setSingleCurrentPage] = useState(0);
+
+  const [walletInput, setWalletInput] = useState("");
+  const [searchedWallet, setSearchedWallet] = useState(null);
+
+  /* ===================== DEFAULT WALLET QUERIES ===================== */
+
+  const { data: covalentData } = useGetBalancesQuery({
+    address: "0x0f85f1523666118eb752eec4a6f763776f4b5693",
+  });
+
+  const { data: transactionData } = useGetTransactionHistoryQuery({
+    address: "0x0f85f1523666118eb752eec4a6f763776f4b5693",
+  });
+
+  const { data: defiData } = useGetDefiPositionQuery({
+    address: "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296",
+  });
+
+  /* ===================== LAZY QUERIES (SEARCHED WALLET) ===================== */
+  const [triggerGetBalances, { data: singleCovalentData }] =
+    useLazyGetBalancesQuery();
+
+  const [triggerGetTransactionHistory, { data: singleTransactionData }] =
+    useLazyGetTransactionHistoryQuery();
+
+  /* ===================== HANDLERS ===================== */
+  const handleGetInfo = () => {
+    if (!walletInput) return;
+
+    setSearchedWallet(walletInput);
+
+    triggerGetBalances({
+      chain: "arbitrum-mainnet",
+      address: walletInput,
+    });
+
+    triggerGetTransactionHistory({
+      chain: "arbitrum-mainnet",
+      address: walletInput,
+    });
+  };
+
+  /* ===================== TOKEN DATA ===================== */
+  const tokens = useMemo(() => covalentData?.data?.items ?? [], [covalentData]);
+
+  const singleTokens = useMemo(
+    () => singleCovalentData?.data?.items ?? [],
+    [singleCovalentData]
   );
-  console.log("Dune Data:", data);
-  console.log("Balance Data:", data?.balances);
-  const token = [
-    {
-      id: 1,
-      coin: "USDC",
-      amount: "10",
-    },
-    {
-      id: 2,
-      coin: "USDT",
-      amount: "50",
-    },
-    {
-      id: 3,
-      coin: "Abr",
-      amount: "24",
-    },
-    {
-      id: 4,
-      coin: "ETH",
-      amount: "50",
-    },
-  ];
-  const doudata = [
-    { value: 40, name: "Uniswap" },
-    { value: 25, name: "GMX" },
-    { value: 20, name: "Aave" },
-    { value: 15, name: "Others" },
-  ];
+
+  /* ===================== CHART DATA ===================== */
+  const doudata = useMemo(() => {
+    return tokens
+      .filter((item) => item.quote > 0)
+      .map((item) => ({
+        name: item.contract_ticker_symbol,
+        value: Number(item.quote.toFixed(2)),
+      }));
+  }, [tokens]);
+
+  const singleDoudata = useMemo(() => {
+    return singleTokens
+      .filter((item) => item.quote > 0)
+      .map((item) => ({
+        name: item.contract_ticker_symbol || "Unknown",
+        value: Number(item.quote.toFixed(2)),
+      }));
+  }, [singleTokens]);
+
+  /* ===================== TRANSACTIONS ===================== */
+  const transactions = useMemo(() => {
+    const items = transactionData?.data?.items ?? [];
+
+    return items.map((tx, index) => ({
+      id: index + 1,
+      address: `${tx.from_address.slice(0, 6)}...${tx.from_address.slice(-4)}`,
+      balance: `$${tx.value ? (Number(tx.value) / 1e18).toFixed(4) : "0.00"}`,
+      protocol: tx.successful ? "Successful" : "Failed",
+      lastActive: new Date(tx.block_signed_at).toLocaleString(),
+    }));
+  }, [transactionData]);
+
+  const singleTransactions = useMemo(() => {
+    const items = singleTransactionData?.data?.items ?? [];
+
+    return items.map((tx, index) => ({
+      id: index + 1,
+      address: `${tx.from_address.slice(0, 6)}...${tx.from_address.slice(-4)}`,
+      balance: `$${tx.value ? (Number(tx.value) / 1e18).toFixed(4) : "0.00"}`,
+      protocol: tx.successful ? "Successful" : "Failed",
+      lastActive: new Date(tx.block_signed_at).toLocaleString(),
+    }));
+  }, [singleTransactionData]);
+
+  /* ===================== PAGINATION ===================== */
+  const paginatedTransactions = useMemo(() => {
+    const start = currentPage * ITEMS_PER_PAGE;
+    return transactions.slice(start, start + ITEMS_PER_PAGE);
+  }, [transactions, currentPage]);
+
+  const singlePaginatedTransactions = useMemo(() => {
+    const start = singleCurrentPage * ITEMS_PER_PAGE;
+    return singleTransactions.slice(start, start + ITEMS_PER_PAGE);
+  }, [singleTransactions, singleCurrentPage]);
+
+  const totalPages = Math.ceil(transactions.length / ITEMS_PER_PAGE);
+  const singleTotalPages = Math.ceil(
+    singleTransactions.length / ITEMS_PER_PAGE
+  );
+
+  /* ===================== DEFI TABLE ===================== */
+  const defiTableData = useMemo(() => {
+    return (defiData?.positions ?? []).map((pos, index) => ({
+      id: index + 1,
+      protocol: pos.protocol || pos.type || "Unknown",
+      poolId: pos.pool
+        ? `${pos.pool.slice(0, 6)}...${pos.pool.slice(-4)}`
+        : "—",
+      tokenPair:
+        pos.token0_symbol && pos.token1_symbol
+          ? `${pos.token0_symbol}/${pos.token1_symbol}`
+          : pos.token_symbol || "—",
+      positionAmount:
+        typeof pos.calculated_balance === "number"
+          ? pos.calculated_balance.toFixed(4)
+          : "—",
+      usdValue:
+        typeof pos.usd_value === "number"
+          ? `$${pos.usd_value.toFixed(2)}`
+          : "$0.00",
+    }));
+  }, [defiData]);
+
+  /* ===================== STATIC DATA ===================== */
   const nftData = [
-    {
-      id: 1,
-      name: "CryptoPunk",
-      price: "$7.58M",
-      image: NFT,
-    },
-    {
-      id: 2,
-      name: "CryptoPunk",
-      price: "$7.58M",
-      image: NFT,
-    },
-    {
-      id: 3,
-      name: "CryptoPunk",
-      price: "$7.58M",
-      image: NFT,
-    },
-    {
-      id: 4,
-      name: "CryptoPunk",
-      price: "$7.58M",
-      image: NFT,
-    },
+    { id: 1, name: "CryptoPunk", price: "$7.58M", image: NFT },
+    { id: 2, name: "CryptoPunk", price: "$7.58M", image: NFT },
+    { id: 3, name: "CryptoPunk", price: "$7.58M", image: NFT },
+    { id: 4, name: "CryptoPunk", price: "$7.58M", image: NFT },
   ];
-  const newWalletCol = [
-    {
-      header: "S/N",
-      accessor: (row) => row.id,
-    },
-    {
-      header: "Adderess",
-      accessor: (row) => row.address,
-    },
 
-    {
-      header: "Amount",
-      accessor: (row) => row.balance,
-    },
-    {
-      header: "Tx. Type",
-      accessor: (row) => row.protocol,
-    },
+  const walletColumns = [
+    { header: "S/N", accessor: (row) => row.id },
+    { header: "Address", accessor: (row) => row.address },
+    { header: "Amount", accessor: (row) => row.balance },
+    { header: "Tx. Status", accessor: (row) => row.protocol },
+    { header: "Date/Time", accessor: (row) => row.lastActive },
+  ];
 
-    {
-      header: "Date/Time",
-      accessor: (row) => row.lastActive,
-    },
+  const positionColumns = [
+    { header: "S/N", accessor: (row) => row.id },
+    { header: "Protocol", accessor: (row) => row.protocol },
+    { header: "Pool", accessor: (row) => row.poolId },
+    { header: "Token Pair", accessor: (row) => row.tokenPair },
+    { header: "Position Amount", accessor: (row) => row.positionAmount },
+    { header: "USD Value", accessor: (row) => row.usdValue },
   ];
-  const newWalletData = [
-    {
-      id: 1,
-      address: "0x7A......91E",
-      balance: "$210",
-      protocol: "Uniswap",
-      lastActive: "2 mins ago",
-    },
-    {
-      id: 2,
-      address: "0x7A......91E",
-      balance: "$100",
-      protocol: "Uniswap",
-      lastActive: "2 hrs ago",
-    },
-    {
-      id: 3,
-      address: "0x7A......91E",
-      balance: "$200",
-      protocol: "Uniswap",
-      lastActive: "5 mins ago",
-    },
-    {
-      id: 4,
-      address: "0x7A......91E",
-      balance: "$30",
-      protocol: "Uniswap",
-      lastActive: "2 mins ago",
-    },
-    {
-      id: 5,
-      address: "0x7A......91E",
-      balance: "$410",
-      protocol: "Uniswap",
-      lastActive: "2 mins ago",
-    },
-    {
-      id: 6,
-      address: "0x7A......91E",
-      balance: "$210",
-      protocol: "Uniswap",
-      lastActive: "2 mins ago",
-    },
-    {
-      id: 7,
-      address: "0x7A......91E",
-      balance: "$310",
-      protocol: "Uniswap",
-      lastActive: "2 mins ago",
-    },
-    {
-      id: 8,
-      address: "0x7A......91E",
-      balance: "$350",
-      protocol: "Uniswap",
-      lastActive: "2 mins ago",
-    },
-    {
-      id: 9,
-      address: "0x7A......91E",
-      balance: "$307",
-      protocol: "Uniswap",
-      lastActive: "2 mins ago",
-    },
-  ];
-  const positionCol = [
-    {
-      header: "S/N",
-      accessor: (row) => row.id,
-    },
-    {
-      header: "Protocol",
-      accessor: (row) => row.protocol,
-    },
-    {
-      header: "PoolID",
-      accessor: (row) => row.poolId,
-    },
-    {
-      header: "TokenPair",
-      accessor: (row) => row.tokenPair,
-    },
-    {
-      header: "Position Amount",
-      accessor: (row) => row.positionAmount,
-    },
-    {
-      header: "%Pool Ownership",
-      accessor: (row) => row.ownership,
-    },
-  ];
-  const positionData = [
-    {
-      id: 1,
-      protocol: "Uniswap",
-      poolId: "2140",
-      tokenPair: "Uniswap",
-      positionAmount: "$50",
-      ownership: "50%",
-    },
-    {
-      id: 2,
-      protocol: "Uniswap",
-      poolId: "2140",
-      tokenPair: "Uniswap",
-      positionAmount: "$50",
-      ownership: "50%",
-    },
-    {
-      id: 3,
-      protocol: "Uniswap",
-      poolId: "2140",
-      tokenPair: "Uniswap",
-      positionAmount: "$50",
-      ownership: "50%",
-    },
-    {
-      id: 4,
-      protocol: "Uniswap",
-      poolId: "2140",
-      tokenPair: "Uniswap",
-      positionAmount: "$50",
-      ownership: "50%",
-    },
-    {
-      id: 5,
-      protocol: "Uniswap",
-      poolId: "2140",
-      tokenPair: "Uniswap",
-      positionAmount: "$50",
-      ownership: "50%",
-    },
-    {
-      id: 6,
-      protocol: "Uniswap",
-      poolId: "2140",
-      tokenPair: "Uniswap",
-      positionAmount: "$50",
-      ownership: "50%",
-    },
-    {
-      id: 7,
-      protocol: "Uniswap",
-      poolId: "2140",
-      tokenPair: "Uniswap",
-      positionAmount: "$50",
-      ownership: "50%",
-    },
-    {
-      id: 8,
-      protocol: "Uniswap",
-      poolId: "2140",
-      tokenPair: "Uniswap",
-      positionAmount: "$50",
-      ownership: "50%",
-    },
-  ];
+
   const MetricsData = [
-    {
-      id: 1,
-      title: "Total Market Value",
-      amount: "9.09b",
-      liquidity: "2.04%",
-    },
+    { id: 1, title: "Total Market Value", amount: "9.09b", liquidity: "2.04%" },
     {
       id: 2,
       title: "24H Volume In Token Trading",
       amount: "165.44m",
       liquidity: "35.04%",
     },
-    {
-      id: 3,
-      title: "Total Tokens",
-      amount: "9.00m",
-      liquidity: "2.04%",
-    },
-    {
-      id: 4,
-      title: "Transaction Volume",
-      amount: "1000",
-      liquidity: "1.04%",
-    },
-    {
-      id: 5,
-      title: "Block Times",
-      amount: "9.00m",
-      liquidity: "2.04%",
-    },
-    {
-      id: 6,
-      title: "Network Hashrate",
-      amount: "9.09b",
-      liquidity: "2.04%",
-    },
+    { id: 3, title: "Total Tokens", amount: "9.00m", liquidity: "2.04%" },
+    { id: 4, title: "Transaction Volume", amount: "1000", liquidity: "1.04%" },
+    { id: 5, title: "Block Times", amount: "9.00m", liquidity: "2.04%" },
+    { id: 6, title: "Network Hashrate", amount: "9.09b", liquidity: "2.04%" },
   ];
 
   return (
@@ -312,22 +224,37 @@ const Portfolio = () => {
               {activeTabs === "token" && (
                 <div className="w-[95%] mx-auto mt-6 pb-6">
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {token.map((item) => (
-                      <div
-                        className="w-[94%] mx-auto md:w-full rounded-xl shadow bg-white text-black py-2"
-                        key={item.id}
-                      >
-                        <div className="w-[85%] mx-auto">
-                          <div className="flex items-center gap-x-3 text-sm md:text-base font-bold">
-                            <h2 className="w-8 h-8 bg-black rounded-full"></h2>
-                            <h2 className="">{item.coin}</h2>
+                    {tokens.map((item) => {
+                      const balance =
+                        Number(item.balance) /
+                        Math.pow(10, item.contract_decimals);
+
+                      return (
+                        <div
+                          key={item.contract_address}
+                          className="w-[94%] mx-auto md:w-full rounded-xl shadow bg-white text-black py-2"
+                        >
+                          <div className="w-[85%] mx-auto">
+                            <div className="flex items-center gap-x-3 text-sm md:text-base font-bold">
+                              <img
+                                src={item.logo_url}
+                                alt={item.contract_name}
+                                className="w-6 h-6 rounded-full"
+                              />
+                              <h2>{item.contract_ticker_symbol}</h2>
+                            </div>
+
+                            <h2 className="uppercase text-base md:text-lg lg:text-xl font-bold mt-2">
+                              {balance.toFixed(4)} {item.contract_ticker_symbol}
+                            </h2>
+
+                            <p className="text-sm text-gray-600 mt-1">
+                              ${item.quote?.toFixed(2) ?? "0.00"}
+                            </p>
                           </div>
-                          <h2 className="uppercase text-lg md:text-xl lg:text-2xl font-bold mt-2">
-                            ${item.amount}
-                          </h2>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -383,7 +310,13 @@ const Portfolio = () => {
               Transaction history
             </h2>
             <div className="mt-5">
-              <Table columns={newWalletCol} data={newWalletData} />
+              <Table columns={walletColumns} data={paginatedTransactions} />
+              <div className="flex items-center justify-end mt-4">
+                <Pagination
+                  total={totalPages}
+                  onChange={({ selected }) => setCurrentPage(selected)}
+                />
+              </div>
             </div>
           </div>
           <div className="w-full">
@@ -391,7 +324,13 @@ const Portfolio = () => {
               DeFi Position Details
             </h2>
             <div className="mt-5">
-              <Table columns={positionCol} data={positionData} />
+              <Table columns={positionColumns} data={defiTableData} />
+              <div className="flex items-center justify-end mt-4">
+                <Pagination
+                  total={totalPages}
+                  onChange={({ selected }) => setCurrentPage(selected)}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -414,8 +353,13 @@ const Portfolio = () => {
                 type="search"
                 className="border w-[80%] px-4 outline-0 py-2 placeholder:text-base md:placeholder:text-lg"
                 placeholder="Enter address"
+                value={walletInput}
+                onChange={(e) => setWalletInput(e.target.value)}
               />
-              <button className="border w-[20%] py-2 cursor-pointer">
+              <button
+                className="border w-[20%] py-2 cursor-pointer"
+                onClick={handleGetInfo}
+              >
                 Get info
               </button>
             </div>
@@ -445,7 +389,7 @@ const Portfolio = () => {
           </div>
         </div>
         <div className="mt-6 w-full flex items-start flex-col md:flex-row gap-6">
-          <div className="w-full md:w-[55%] h-98 border border-[#dadada]">
+          <div className="w-full md:w-[55%] h-98 overflow-y-auto border border-[#dadada]">
             <div className="w-[95%] mx-auto mt-2 flex items-center gap-x-6">
               {["token", "nft"].map((tab) => (
                 <button
@@ -463,20 +407,39 @@ const Portfolio = () => {
             </div>
             {activeTabs === "token" && (
               <div className="w-[95%] mx-auto mt-6 pb-6">
-                <div className="mt-4">
-                  {token.map((item) => (
-                    <div
-                      className="flex items-center gap-x-3 pb-3"
-                      key={item.id}
-                    >
-                      <h3 className="text-base md:text-lg lg:text-xl  font-semibold">
-                        {item.amount}
-                      </h3>
-                      <h3 className="text-base md:text-lg lg:text-xl font-semibold">
-                        {item.coin}
-                      </h3>
-                    </div>
-                  ))}
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {singleTokens.map((item) => {
+                    const balance =
+                      Number(item.balance) /
+                      Math.pow(10, item.contract_decimals);
+
+                    return (
+                      <div
+                        key={item.contract_address}
+                        className="w-[94%] mx-auto md:w-full rounded-xl shadow bg-white text-black py-2"
+                      >
+                        <div className="w-[85%] mx-auto">
+                          <div className="flex items-center gap-x-3 text-sm md:text-base font-bold">
+                            <img
+                              src={item.logo_url ?? "logo"}
+                              // alt={item.contract_name}
+                              alt="logo"
+                              className="w-6 h-6 rounded-full"
+                            />
+                            <h2>{item.contract_ticker_symbol}</h2>
+                          </div>
+
+                          <h2 className="uppercase text-base md:text-lg lg:text-xl font-bold mt-2">
+                            {balance.toFixed(4)} {item.contract_ticker_symbol}
+                          </h2>
+
+                          <p className="text-sm text-gray-600 mt-1">
+                            ${item.quote?.toFixed(2) ?? "0.00"}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -507,7 +470,7 @@ const Portfolio = () => {
                 </h2>
                 <DoughnutChart
                   title="Arbitrum TVL Distribution"
-                  data={doudata}
+                  data={singleDoudata}
                 />
               </div>
             )}
@@ -529,7 +492,13 @@ const Portfolio = () => {
             Transaction history
           </h2>
           <div className="mt-5 pb-4">
-            <Table columns={newWalletCol} data={newWalletData} />
+            <Table columns={walletColumns} data={singlePaginatedTransactions} />
+            <div className="flex items-center justify-end mt-4">
+              <Pagination
+                total={singleTotalPages}
+                onChange={({ selected }) => setSingleCurrentPage(selected)}
+              />
+            </div>
           </div>
         </div>
       </div>
