@@ -38,7 +38,22 @@ const Navbar = () => {
           )}
         </div>
       </div>
-      {toggle && <div className="absolute w-full bg-amber-50 h-screen"></div>}
+      {toggle && (
+        <div className="absolute w-full bg-amber-50 top-10 h-screen flex flex-col items-center gap-y-4 text-black justify-start pt-12">
+          <Link to="/dashboard" className="text-lg font-semibold">
+            Dashboard
+          </Link>
+          <Link to="/dashboard/portfolio" className="text-lg font-semibold">
+            Portfolio
+          </Link>
+          <Link to="/dashboard/fauset" className="text-lg font-semibold">
+            Faucet
+          </Link>
+          <Link to="/dashboard/swap" className="text-lg font-semibold">
+            Swap
+          </Link>
+        </div>
+      )}
     </div>
   );
 };
