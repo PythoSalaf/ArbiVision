@@ -1,12 +1,6 @@
 import { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 
-/**
- * Rounded Doughnut Chart (Apache ECharts)
- * Use cases: ecosystem distribution, protocol dominance, TVL share
- * Fully responsive & reusable
- */
-
 const DoughnutChart = ({ data, title }) => {
   const option = useMemo(
     () => ({

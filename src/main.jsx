@@ -8,7 +8,7 @@ import {AppKitProvider} from "@reown/appkit/react"
 import {arbitrum} from '@reown/appkit/networks'
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
+  <StrictMode>it
     <Provider store={store}>
       <AppKitProvider 
         projectId="578373c30b36d380439638fc0d9aca10" 
