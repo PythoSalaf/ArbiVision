@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { IoMenuOutline, IoClose } from "react-icons/io5";
 import { PiBandaidsLight } from "react-icons/pi";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 const Navbar = () => {
+
+  const navigate = useNavigate();
   const [toggle, setToggle] = useState(false);
   return (
     <div className="relative w-full">
@@ -20,10 +22,12 @@ const Navbar = () => {
           <Link>Swap</Link>
           <Link>Portfolio</Link>
           <Link>Dashboard</Link>
-          <Link>Fauset</Link>
+          <Link>Faucet</Link>
         </div>
         <div className="hidden md:block">
-          <button className="bg-[#0a2749] text-white py-1.5 px-4 rounded-3xl cursor-pointer hover:bg-[#011d3d] transition-all ease-in-out duration-300 transform-3d text-lg ">
+          <button className="bg-[#0a2749] text-white py-1.5 px-4 rounded-3xl cursor-pointer hover:bg-[#011d3d] transition-all ease-in-out duration-300 transform-3d text-lg "
+          onClick={()=>{navigate("/dashboard")}}
+          >
             Get Started
           </button>
         </div>

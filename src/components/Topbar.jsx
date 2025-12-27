@@ -2,9 +2,13 @@ import { useState } from "react";
 import { IoClose, IoMenuOutline } from "react-icons/io5";
 import { PiBandaidsLight } from "react-icons/pi";
 import { Link } from "react-router";
+import { useAppKit } from "@reown/appkit/react";
 
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const {open, close} = useAppKit();
+
   return (
     <div className="w-full relative bg-[#040705] z-50">
       <div className="w-[96%]  mx-auto flex items-center justify-between">
@@ -19,13 +23,14 @@ const Topbar = () => {
           <input
             type="search"
             className="border border-[#dadada] w-full rounded-3xl py-1 outline-0 px-5"
-            placeholder="Search........................"
+            placeholder="Search ........................"
           />
         </div>
         <div className="hidden md:block ">
-          <button className="text-white py-1.5 px-4 rounded-3xl cursor-pointer bg-[#011d3d] transition-all ease-in-out duration-300 transform-3d text-base">
+          <button onClick={open} className="text-white py-1.5 px-4 rounded-3xl cursor-pointer bg-[#011d3d] transition-all ease-in-out duration-300 transform-3d text-base">
             Connect Wallet
           </button>
+  
         </div>
         <div
           className="block md:hidden cursor-pointer text-white"
