@@ -5,7 +5,11 @@ import { DoughnutChart, LineRaceChart, Pagination, Table } from "../components";
 import { NFT } from "../assets";
 
 /* ===================== API HOOKS ===================== */
-import { useGetDefiPositionQuery, useGetNFTsQuery } from "../feature/DuneSlice";
+import {
+  useGetDefiPositionQuery,
+  useGetNFTsQuery,
+  useLazyGetNFTsQuery,
+} from "../feature/DuneSlice";
 
 import {
   useGetBalancesQuery,
@@ -29,6 +33,7 @@ const Portfolio = () => {
   const [walletInput, setWalletInput] = useState("");
   const [searchedWallet, setSearchedWallet] = useState(null);
   const [mappedNfts, setMappedNfts] = useState([]);
+  const [singleMappedNfts, setSingleMappedNfts] = useState([]);
 
   const ipfsToHttp = (uri) => {
     if (!uri) return null;
@@ -100,6 +105,8 @@ const Portfolio = () => {
   const [triggerGetTransactionHistory, { data: singleTransactionData }] =
     useLazyGetTransactionHistoryQuery();
 
+  const [triggerGetNFTsQuery, { data: singleNftData }] = useLazyGetNFTsQuery();
+  console.log("Single NFT Data", singleNftData);
   /* ===================== HANDLERS ===================== */
   const handleGetInfo = () => {
     if (!walletInput) return;
@@ -113,6 +120,9 @@ const Portfolio = () => {
 
     triggerGetTransactionHistory({
       chain: "arbitrum-mainnet",
+      address: walletInput,
+    });
+    triggerGetNFTsQuery({
       address: walletInput,
     });
   };
@@ -146,7 +156,11 @@ const Portfolio = () => {
 
   /* ======================= NFTS DATAS ===================== */
   const nfts = useMemo(() => nftDatas?.entries ?? [], [nftDatas]);
-  console.log("Nfts", nfts);
+  const singleNfts = useMemo(
+    () => singleNftData?.entries ?? [],
+    [singleNftData]
+  );
+  console.log("Nfts", singleNfts);
 
   useEffect(() => {
     if (!nfts.length) return;
@@ -170,6 +184,28 @@ const Portfolio = () => {
     loadNfts();
   }, [nfts]);
 
+  useEffect(() => {
+    if (!singleNfts.length) return;
+
+    const loadNfts = async () => {
+      const resolved = await Promise.all(
+        singleNfts.slice(0, 20).map(async (nft) => {
+          const image = await fetchNftImage(nft.metadata?.uri);
+
+          return {
+            id: `${nft.contract_address}-${nft.token_id}`,
+            name: nft.name || "Unnamed NFT",
+            image,
+          };
+        })
+      );
+
+      setSingleMappedNfts(resolved);
+    };
+
+    loadNfts();
+  }, [singleNfts]);
+
   const nftDoughnutData = useMemo(() => {
     if (!nfts.length) return [];
 
@@ -184,6 +220,21 @@ const Portfolio = () => {
       value,
     }));
   }, [nfts]);
+
+  const singleNftDoughnutData = useMemo(() => {
+    if (!singleNfts.length) return [];
+
+    const grouped = singleNfts.reduce((acc, nft) => {
+      const key = nft.token_standard || "Unknown";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(grouped).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  }, [singleNfts]);
 
   /* ===================== TRANSACTIONS ===================== */
   const transactions = useMemo(() => {
@@ -260,12 +311,6 @@ const Portfolio = () => {
   }, [defiData]);
 
   /* ===================== STATIC DATA ===================== */
-  const nftData = [
-    { id: 1, name: "CryptoPunk", price: "$7.58M", image: NFT },
-    { id: 2, name: "CryptoPunk", price: "$7.58M", image: NFT },
-    { id: 3, name: "CryptoPunk", price: "$7.58M", image: NFT },
-    { id: 4, name: "CryptoPunk", price: "$7.58M", image: NFT },
-  ];
 
   const walletColumns = [
     { header: "S/N", accessor: (row) => row.id },
@@ -510,8 +555,8 @@ const Portfolio = () => {
             ))}
           </div>
         </div>
-        <div className="mt-6 w-full flex items-start flex-col md:flex-row gap-6">
-          <div className="w-full md:w-[55%] h-98 overflow-y-auto border border-[#dadada]">
+        <div className="mt-10 w-full flex items-start flex-col md:flex-row gap-6">
+          <div className="w-full md:w-[55%] h-98 overflow-x-hidden overflow-y-auto border border-[#dadada]">
             <div className="w-[95%] mx-auto mt-2 flex items-center gap-x-6">
               {["token", "nft"].map((tab) => (
                 <button
@@ -529,7 +574,7 @@ const Portfolio = () => {
             </div>
             {activeTabs === "token" && (
               <div className="w-[95%] mx-auto mt-6 pb-6">
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                   {singleTokens.map((item) => {
                     const balance =
                       Number(item.balance) /
@@ -569,14 +614,14 @@ const Portfolio = () => {
               {activeTabs === "nft" && (
                 <div className="w-[95%] mx-auto mt-6 pb-6">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                    {nftData.map((item) => (
+                    {singleMappedNfts.slice(0, 30).map((item) => (
                       <div className="flex flex-col items-center" key={item.id}>
                         <img
                           src={item.image}
-                          alt={`${item.name}`}
-                          className="w-28 h-32"
+                          alt={item.name}
+                          className="w-24 h-24 object-cover rounded"
                         />
-                        <p className="pt-2">{item.name}</p>
+                        <p className="pt-2 text-center text-sm">{item.name}</p>
                       </div>
                     ))}
                   </div>
@@ -601,10 +646,14 @@ const Portfolio = () => {
                 <h2 className="text-base md:text-lg font-semibold">
                   NFT Chart
                 </h2>
-                <DoughnutChart
-                  title="Arbitrum TVL Distribution"
-                  data={doudata}
-                />
+                {singleNftDoughnutData.length > 0 ? (
+                  <DoughnutChart
+                    title="NFT Distribution by Standard"
+                    data={singleNftDoughnutData}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-500">No NFT data available</p>
+                )}
               </div>
             )}
           </div>
