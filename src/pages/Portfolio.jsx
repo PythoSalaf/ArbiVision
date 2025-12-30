@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-
+import {
+  InlineLoader,
+  SkeletonCard,
+  SkeletonTable,
+  SkeletonTokenCard,
+} from "../components";
 /* ===================== COMPONENTS & ASSETS ===================== */
 import { DoughnutChart, LineRaceChart, Pagination, Table } from "../components";
 import { NFT } from "../assets";
@@ -80,33 +85,61 @@ const Portfolio = () => {
 
   /* ===================== DEFAULT WALLET QUERIES ===================== */
 
-  const { data: covalentData } = useGetBalancesQuery({
+  const { data: covalentData, isLoading } = useGetBalancesQuery({
     address: "0x0f85f1523666118eb752eec4a6f763776f4b5693",
   });
 
-  const { data: transactionData } = useGetTransactionHistoryQuery({
-    address: "0x0f85f1523666118eb752eec4a6f763776f4b5693",
-  });
+  const { data: transactionData, isLoading: transLoading } =
+    useGetTransactionHistoryQuery({
+      address: "0x0f85f1523666118eb752eec4a6f763776f4b5693",
+    });
 
-  const { data: defiData } = useGetDefiPositionQuery({
+  const { data: defiData, isLoading: defiLoading } = useGetDefiPositionQuery({
     address: "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296",
   });
 
-  const { data: nftDatas } = useGetNFTsQuery({
+  const { data: nftDatas, isLoading: nftLoading } = useGetNFTsQuery({
     address: "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296",
   });
 
   console.log("NFT Data", nftDatas);
 
   /* ===================== LAZY QUERIES (SEARCHED WALLET) ===================== */
-  const [triggerGetBalances, { data: singleCovalentData }] =
-    useLazyGetBalancesQuery();
+  const [
+    triggerGetBalances,
+    {
+      data: singleCovalentData,
+      isLoading: singleBalancesLoading,
+      isFetching: singleBalancesFetching,
+    },
+  ] = useLazyGetBalancesQuery();
 
-  const [triggerGetTransactionHistory, { data: singleTransactionData }] =
-    useLazyGetTransactionHistoryQuery();
+  const [
+    triggerGetTransactionHistory,
+    {
+      data: singleTransactionData,
+      isLoading: singleTxLoading,
+      isFetching: singleTxFetching,
+    },
+  ] = useLazyGetTransactionHistoryQuery();
 
-  const [triggerGetNFTsQuery, { data: singleNftData }] = useLazyGetNFTsQuery();
-  console.log("Single NFT Data", singleNftData);
+  const [
+    triggerGetNFTsQuery,
+    {
+      data: singleNftData,
+      isLoading: singleNftLoading,
+      isFetching: singleNftFetching,
+    },
+  ] = useLazyGetNFTsQuery();
+
+  const isSearchLoading =
+    singleBalancesLoading ||
+    singleBalancesFetching ||
+    singleTxLoading ||
+    singleTxFetching ||
+    singleNftLoading ||
+    singleNftFetching;
+
   /* ===================== HANDLERS ===================== */
   const handleGetInfo = () => {
     if (!walletInput) return;
@@ -370,38 +403,42 @@ const Portfolio = () => {
               {activeTabs === "token" && (
                 <div className="w-[95%] mx-auto mt-6 pb-6">
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {tokens.map((item) => {
-                      const balance =
-                        Number(item.balance) /
-                        Math.pow(10, item.contract_decimals);
+                    {isLoading
+                      ? Array.from({ length: 4 }).map((_, index) => (
+                          <SkeletonTokenCard key={index} />
+                        ))
+                      : tokens.map((item) => {
+                          const balance =
+                            Number(item.balance) /
+                            Math.pow(10, item.contract_decimals);
 
-                      return (
-                        <div
-                          key={item.contract_address}
-                          className="w-[94%] mx-auto md:w-full rounded-xl shadow bg-white text-black py-2"
-                        >
-                          <div className="w-[85%] mx-auto">
-                            <div className="flex items-center gap-x-3 text-sm md:text-base font-bold">
-                              <img
-                                src={item.logo_url}
-                                // alt={item.contract_name}
-                                alt="logo"
-                                className="w-6 h-6 rounded-full"
-                              />
-                              <h2>{item.contract_ticker_symbol}</h2>
+                          return (
+                            <div
+                              key={item.contract_address}
+                              className="w-[94%] mx-auto md:w-full rounded-xl shadow bg-white text-black py-2"
+                            >
+                              <div className="w-[85%] mx-auto">
+                                <div className="flex items-center gap-x-3 text-sm md:text-base font-bold">
+                                  <img
+                                    src={item.logo_url}
+                                    alt="logo"
+                                    className="w-6 h-6 rounded-full"
+                                  />
+                                  <h2>{item.contract_ticker_symbol}</h2>
+                                </div>
+
+                                <h2 className="uppercase text-base md:text-lg lg:text-xl font-bold mt-2">
+                                  {balance.toFixed(4)}{" "}
+                                  {item.contract_ticker_symbol}
+                                </h2>
+
+                                <p className="text-sm text-gray-600 mt-1">
+                                  ${item.quote?.toFixed(2) ?? "0.00"}
+                                </p>
+                              </div>
                             </div>
-
-                            <h2 className="uppercase text-base md:text-lg lg:text-xl font-bold mt-2">
-                              {balance.toFixed(4)} {item.contract_ticker_symbol}
-                            </h2>
-
-                            <p className="text-sm text-gray-600 mt-1">
-                              ${item.quote?.toFixed(2) ?? "0.00"}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
                   </div>
                 </div>
               )}
@@ -409,21 +446,25 @@ const Portfolio = () => {
                 {activeTabs === "nft" && (
                   <div className="w-[95%] mx-auto mt-6 pb-6">
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                      {mappedNfts.slice(0, 30).map((item) => (
-                        <div
-                          className="flex flex-col items-center"
-                          key={item.id}
-                        >
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-24 h-24 object-cover rounded"
-                          />
-                          <p className="pt-2 text-center text-sm">
-                            {item.name}
-                          </p>
-                        </div>
-                      ))}
+                      {nftLoading
+                        ? Array.from({ length: 8 }).map((_, index) => (
+                            <SkeletonCard key={index} />
+                          ))
+                        : mappedNfts.slice(0, 30).map((item) => (
+                            <div
+                              className="flex flex-col items-center"
+                              key={item.id}
+                            >
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-24 h-24 object-cover rounded"
+                              />
+                              <p className="pt-2 text-center text-sm">
+                                {item.name}
+                              </p>
+                            </div>
+                          ))}
                     </div>
                   </div>
                 )}
@@ -465,13 +506,19 @@ const Portfolio = () => {
               Transaction history
             </h2>
             <div className="mt-5">
-              <Table columns={walletColumns} data={paginatedTransactions} />
-              <div className="flex items-center justify-end mt-4">
-                <Pagination
-                  total={totalPages}
-                  onChange={({ selected }) => setCurrentPage(selected)}
-                />
-              </div>
+              {transLoading ? (
+                <SkeletonTable rows={8} columns={5} />
+              ) : (
+                <div className="">
+                  <Table columns={walletColumns} data={paginatedTransactions} />
+                  <div className="flex items-center justify-end mt-4">
+                    <Pagination
+                      total={totalPages}
+                      onChange={({ selected }) => setCurrentPage(selected)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="w-full">
@@ -479,13 +526,19 @@ const Portfolio = () => {
               DeFi Position Details
             </h2>
             <div className="mt-5">
-              <Table columns={positionColumns} data={defiTableData} />
-              <div className="flex items-center justify-end mt-4">
-                <Pagination
-                  total={totalPages}
-                  onChange={({ selected }) => setCurrentPage(selected)}
-                />
-              </div>
+              {defiLoading ? (
+                <SkeletonTable rows={8} columns={6} />
+              ) : (
+                <div className="">
+                  <Table columns={positionColumns} data={defiTableData} />
+                  <div className="flex items-center justify-end mt-4">
+                    <Pagination
+                      total={totalPages}
+                      onChange={({ selected }) => setCurrentPage(selected)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="w-full mt-5">
@@ -528,7 +581,7 @@ const Portfolio = () => {
                 className="border w-[20%] py-2 cursor-pointer"
                 onClick={handleGetInfo}
               >
-                Get info
+                {isSearchLoading ? <InlineLoader /> : "Get Info"}
               </button>
             </div>
           </div>
