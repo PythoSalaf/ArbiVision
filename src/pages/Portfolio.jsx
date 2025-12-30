@@ -623,6 +623,19 @@ const Portfolio = () => {
             </div>
           </div>
         </div>
+        <div className="mt-9 pb-4">
+          <h2 className="capitalize text-xl md:text-2xl lg:text-3xl font-semibold">
+            Time based wallet activity
+          </h2>
+          <div className="w-full mt-3">
+            <LineRaceChart
+              title="Market Performance Race"
+              categories={raceData.categories}
+              series={raceData.series}
+              height={400}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
