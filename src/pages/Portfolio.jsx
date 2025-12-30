@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /* ===================== COMPONENTS & ASSETS ===================== */
-import { DoughnutChart, Pagination, Table } from "../components";
+import { DoughnutChart, LineRaceChart, Pagination, Table } from "../components";
 import { NFT } from "../assets";
 
 /* ===================== API HOOKS ===================== */
-import { useGetDefiPositionQuery } from "../feature/DuneSlice";
+import { useGetDefiPositionQuery, useGetNFTsQuery } from "../feature/DuneSlice";
 
 import {
   useGetBalancesQuery,
@@ -28,6 +28,50 @@ const Portfolio = () => {
 
   const [walletInput, setWalletInput] = useState("");
   const [searchedWallet, setSearchedWallet] = useState(null);
+  const [mappedNfts, setMappedNfts] = useState([]);
+
+  const ipfsToHttp = (uri) => {
+    if (!uri) return null;
+    return uri.startsWith("ipfs://")
+      ? uri.replace("ipfs://", "https://ipfs.io/ipfs/")
+      : uri;
+  };
+
+  const fetchNftImage = async (metadataUri) => {
+    try {
+      const res = await fetch(ipfsToHttp(metadataUri));
+      const metadata = await res.json();
+      return ipfsToHttp(metadata.image);
+    } catch (err) {
+      console.error("Metadata fetch failed:", err);
+      return null;
+    }
+  };
+
+  const generateLineRaceData = ({
+    lines = 5,
+    points = 20,
+    startValue = 100,
+  }) => {
+    const categories = Array.from({ length: points }, (_, i) => `T${i + 1}`);
+
+    const series = Array.from({ length: lines }, (_, i) => {
+      let value = startValue + Math.random() * 50;
+
+      return {
+        name: `Line ${i + 1}`,
+        type: "line",
+        smooth: true,
+        showSymbol: false,
+        data: categories.map(() => {
+          value += Math.random() * 20 - 10;
+          return Math.max(0, value.toFixed(2));
+        }),
+      };
+    });
+
+    return { categories, series };
+  };
 
   /* ===================== DEFAULT WALLET QUERIES ===================== */
 
@@ -42,6 +86,12 @@ const Portfolio = () => {
   const { data: defiData } = useGetDefiPositionQuery({
     address: "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296",
   });
+
+  const { data: nftDatas } = useGetNFTsQuery({
+    address: "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296",
+  });
+
+  console.log("NFT Data", nftDatas);
 
   /* ===================== LAZY QUERIES (SEARCHED WALLET) ===================== */
   const [triggerGetBalances, { data: singleCovalentData }] =
@@ -94,6 +144,47 @@ const Portfolio = () => {
       }));
   }, [singleTokens]);
 
+  /* ======================= NFTS DATAS ===================== */
+  const nfts = useMemo(() => nftDatas?.entries ?? [], [nftDatas]);
+  console.log("Nfts", nfts);
+
+  useEffect(() => {
+    if (!nfts.length) return;
+
+    const loadNfts = async () => {
+      const resolved = await Promise.all(
+        nfts.slice(0, 20).map(async (nft) => {
+          const image = await fetchNftImage(nft.metadata?.uri);
+
+          return {
+            id: `${nft.contract_address}-${nft.token_id}`,
+            name: nft.name || "Unnamed NFT",
+            image,
+          };
+        })
+      );
+
+      setMappedNfts(resolved);
+    };
+
+    loadNfts();
+  }, [nfts]);
+
+  const nftDoughnutData = useMemo(() => {
+    if (!nfts.length) return [];
+
+    const grouped = nfts.reduce((acc, nft) => {
+      const key = nft.token_standard || "Unknown";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(grouped).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  }, [nfts]);
+
   /* ===================== TRANSACTIONS ===================== */
   const transactions = useMemo(() => {
     const items = transactionData?.data?.items ?? [];
@@ -118,6 +209,16 @@ const Portfolio = () => {
       lastActive: new Date(tx.block_signed_at).toLocaleString(),
     }));
   }, [singleTransactionData]);
+
+  const raceData = useMemo(
+    () =>
+      generateLineRaceData({
+        lines: 4,
+        points: 30,
+        startValue: 120,
+      }),
+    []
+  );
 
   /* ===================== PAGINATION ===================== */
   const paginatedTransactions = useMemo(() => {
@@ -184,14 +285,14 @@ const Portfolio = () => {
   ];
 
   const MetricsData = [
-    { id: 1, title: "Total Market Value", amount: "9.09b", liquidity: "2.04%" },
+    { id: 1, title: "Wallet net worth", amount: "9.09b", liquidity: "2.04%" },
     {
       id: 2,
-      title: "24H Volume In Token Trading",
+      title: "Total Defi Position",
       amount: "165.44m",
       liquidity: "35.04%",
     },
-    { id: 3, title: "Total Tokens", amount: "9.00m", liquidity: "2.04%" },
+    { id: 3, title: "Active Protocol", amount: "9.00m", liquidity: "2.04%" },
     { id: 4, title: "Transaction Volume", amount: "1000", liquidity: "1.04%" },
     { id: 5, title: "Block Times", amount: "9.00m", liquidity: "2.04%" },
     { id: 6, title: "Network Hashrate", amount: "9.09b", liquidity: "2.04%" },
@@ -205,7 +306,7 @@ const Portfolio = () => {
             Portfolio
           </h1>
           <div className="mt-6 w-full flex items-start flex-col md:flex-row gap-6">
-            <div className="w-full md:w-[55%] h-98 border border-[#dadada]">
+            <div className="w-full md:w-[55%] h-98 overflow-y-auto  border border-[#dadada]">
               <div className="w-[95%] mx-auto mt-2 flex items-center gap-x-6">
                 {["token", "nft"].map((tab) => (
                   <button
@@ -238,7 +339,8 @@ const Portfolio = () => {
                             <div className="flex items-center gap-x-3 text-sm md:text-base font-bold">
                               <img
                                 src={item.logo_url}
-                                alt={item.contract_name}
+                                // alt={item.contract_name}
+                                alt="logo"
                                 className="w-6 h-6 rounded-full"
                               />
                               <h2>{item.contract_ticker_symbol}</h2>
@@ -262,17 +364,19 @@ const Portfolio = () => {
                 {activeTabs === "nft" && (
                   <div className="w-[95%] mx-auto mt-6 pb-6">
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                      {nftData.map((item) => (
+                      {mappedNfts.slice(0, 30).map((item) => (
                         <div
                           className="flex flex-col items-center"
                           key={item.id}
                         >
                           <img
                             src={item.image}
-                            alt={`${item.name}`}
-                            className="w-28 h-32"
+                            alt={item.name}
+                            className="w-24 h-24 object-cover rounded"
                           />
-                          <p className="pt-2">{item.name}</p>
+                          <p className="pt-2 text-center text-sm">
+                            {item.name}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -297,10 +401,16 @@ const Portfolio = () => {
                   <h2 className="text-base md:text-lg font-semibold">
                     NFT Chart
                   </h2>
-                  <DoughnutChart
-                    title="Arbitrum TVL Distribution"
-                    data={doudata}
-                  />
+                  {nftDoughnutData.length > 0 ? (
+                    <DoughnutChart
+                      title="NFT Distribution by Standard"
+                      data={nftDoughnutData}
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No NFT data available
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -331,6 +441,19 @@ const Portfolio = () => {
                   onChange={({ selected }) => setCurrentPage(selected)}
                 />
               </div>
+            </div>
+          </div>
+          <div className="w-full mt-5">
+            <h2 className="capitalize text-xl md:text-2xl lg:text-3xl font-semibold">
+              Wallet Retention Score
+            </h2>
+            <div className="w-full">
+              <LineRaceChart
+                title="Market Performance Race"
+                categories={raceData.categories}
+                series={raceData.series}
+                height={400}
+              />
             </div>
           </div>
         </div>
@@ -367,7 +490,7 @@ const Portfolio = () => {
         </div>
         <div className="mt-8 w-full ">
           <h2 className="capitalize text-xl md:text-2xl lg:text-3xl font-semibold">
-            Wallet Behaviour Insight
+            Wallet Insight
           </h2>
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-6 my-8">
             {MetricsData.map((item) => (
@@ -377,7 +500,6 @@ const Portfolio = () => {
               >
                 <div className="w-[85%] mx-auto">
                   <div className="flex items-center gap-x-3 text-sm md:text-base font-bold">
-                    <h2 className="">$</h2>
                     <h2 className="">{item.title}</h2>
                   </div>
                   <h2 className="uppercase text-lg md:text-xl lg:text-2xl font-bold mt-2">

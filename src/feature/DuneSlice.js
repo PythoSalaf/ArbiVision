@@ -16,6 +16,10 @@ export const duneApi = createApi({
       query: ({ address }) => `/v1/evm/balances/${address}?chain_ids=42161`,
       providesTags: ["Balance"],
     }),
+    getNFTs: builder.query({
+      query: ({ address }) => `/v1/evm/collectibles/${address}`,
+      providesTags: ["Nfts"],
+    }),
     getDefiPosition: builder.query({
       query: ({ address }) => `/beta/evm/defi/positions/${address}?chain_ids=1`,
       providesTags: ["DefiPosition"],
@@ -23,4 +27,8 @@ export const duneApi = createApi({
   }),
 });
 
-export const { useAccountBalanceQuery, useGetDefiPositionQuery } = duneApi;
+export const {
+  useAccountBalanceQuery,
+  useGetDefiPositionQuery,
+  useGetNFTsQuery,
+} = duneApi;
