@@ -4,7 +4,16 @@ import { FaWallet } from "react-icons/fa";
 import { PiBandaidsLight } from "react-icons/pi";
 import { IoMdSwap } from "react-icons/io";
 import { TbLogout } from "react-icons/tb";
+import { usePrivy } from "@privy-io/react-auth";
 const Sidebar = () => {
+  const { logout, user } = usePrivy();
+  const address = user?.wallet?.address;
+  const displayAddress = address
+    ? `${address.slice(0, 4)}......${address.slice(-4)}`
+    : "Notconnected";
+  const handleLogout = () => {
+    logout();
+  };
   const active =
     "bg-white text-black py-1 px-4 md:text-base rounded-md lg:text-lg font-semibold flex items-center gap-x-3";
   const inactive =
@@ -44,18 +53,20 @@ const Sidebar = () => {
             Swap
           </NavLink>
         </div>
-        <div className="w-full mt-48">
+        <div className="w-full mt-40">
           <div className="w-full rounded-md bg-white  text-black">
-            <div className="w-[90%] mx-auto flex items-center py-3 gap-x-3 px-2">
+            <div className="w-[90%] mx-auto flex items-center py-3 gap-x-3 px-1.5">
               <FaWallet size={24} className="inline-block " />
               <h4 className="font-semibold md:text-sm lg:text-base">
-                0x7A......91E
+                {displayAddress}
               </h4>
             </div>
           </div>
           <div className="bg-white text-black rounded-md mt-4 cursor-pointer md:text-sm lg:text-base py-1 px-4 font-semibold flex items-center gap-x-4 ">
             <TbLogout size={24} className="inline-block " />
-            <button className="cursor-pointer">Logout</button>
+            <button className="cursor-pointer" onClick={handleLogout}>
+              Logout
+            </button>
           </div>
         </div>
       </div>

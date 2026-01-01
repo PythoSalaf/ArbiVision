@@ -5,10 +5,8 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "react-router";
 
 const Topbar = () => {
-
   const [isOpen, setIsOpen] = useState(false);
-  const { login, logout } = usePrivy();
-
+  const { login, logout, authenticated } = usePrivy();
 
   const handleLogout = () => {
     logout();
@@ -32,11 +30,23 @@ const Topbar = () => {
             required
           />
         </div>
+
         <div className="hidden md:block ">
-          <button onClick={login} className="text-white py-1.5 px-4 rounded-3xl cursor-pointer bg-[#011d3d] transition-all ease-in-out duration-300 transform-3d text-base">
-            Connect Wallet
-          </button>
-  
+          {authenticated ? (
+            <button
+              onClick={handleLogout}
+              className="text-white py-1.5 px-4 rounded-3xl cursor-pointer bg-[#011d3d] transition-all ease-in-out duration-300 transform-3d text-base"
+            >
+              Disconnect Wallet
+            </button>
+          ) : (
+            <button
+              onClick={login}
+              className="text-white py-1.5 px-4 rounded-3xl cursor-pointer bg-[#011d3d] transition-all ease-in-out duration-300 transform-3d text-base"
+            >
+              Connect Wallet
+            </button>
+          )}
         </div>
         <div
           className="block md:hidden cursor-pointer text-white"

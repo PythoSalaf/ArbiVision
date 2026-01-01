@@ -22,6 +22,7 @@ import {
   useLazyGetBalancesQuery,
   useLazyGetTransactionHistoryQuery,
 } from "../feature/CovalentSlice";
+import { usePrivy } from "@privy-io/react-auth";
 
 /* =============================================================== */
 
@@ -29,7 +30,6 @@ const ITEMS_PER_PAGE = 10;
 
 const Portfolio = () => {
   /* ===================== STATE ===================== */
-  const [isConnect] = useState(true);
   const [activeTabs, setActiveTabs] = useState("token");
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -39,6 +39,8 @@ const Portfolio = () => {
   const [searchedWallet, setSearchedWallet] = useState(null);
   const [mappedNfts, setMappedNfts] = useState([]);
   const [singleMappedNfts, setSingleMappedNfts] = useState([]);
+  const { user, authenticated } = usePrivy();
+  const walletAddress = user?.wallet?.address || null;
 
   const ipfsToHttp = (uri) => {
     if (!uri) return null;
@@ -86,20 +88,20 @@ const Portfolio = () => {
   /* ===================== DEFAULT WALLET QUERIES ===================== */
 
   const { data: covalentData, isLoading } = useGetBalancesQuery({
-    address: "0x0f85f1523666118eb752eec4a6f763776f4b5693",
+    address: `${walletAddress}`,
   });
 
   const { data: transactionData, isLoading: transLoading } =
     useGetTransactionHistoryQuery({
-      address: "0x0f85f1523666118eb752eec4a6f763776f4b5693",
+      address: `${walletAddress}`,
     });
 
   const { data: defiData, isLoading: defiLoading } = useGetDefiPositionQuery({
-    address: "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296",
+    address: `${walletAddress}`,
   });
 
   const { data: nftDatas, isLoading: nftLoading } = useGetNFTsQuery({
-    address: "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296",
+    address: `${walletAddress}`,
   });
 
   console.log("NFT Data", nftDatas);
@@ -378,7 +380,7 @@ const Portfolio = () => {
 
   return (
     <div className="w-full">
-      {isConnect ? (
+      {authenticated ? (
         <div className="">
           <h1 className="text-xl md:text-2xl lg:text-3xl font-semibold ">
             Portfolio
