@@ -5,7 +5,7 @@ const Fauset = () => {
   return (
     <div className="w-full h-screen">
       <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold capitalize">
-        Get Arbitrium sepolia testnet tokens
+        Get Arbitrum Sepolia Testnet ETH Tokens
       </h2>
       <div className="mt-16 w-full border py-8">
         <div className="w-[80%] mx-auto flex items-center justify-center flex-col">
