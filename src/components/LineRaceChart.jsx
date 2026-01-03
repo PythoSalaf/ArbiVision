@@ -2,50 +2,22 @@
 import React from "react";
 import ReactECharts from "echarts-for-react";
 
-const LineRaceChart = ({
-  title = "Line Race Chart",
-  categories = [],
-  series = [],
-  height = 350,
-  animationDuration = 5000,
-}) => {
-  const options = {
-    title: {
-      text: title,
-      left: "center",
-      textStyle: { fontSize: 14 },
-    },
-    tooltip: {
-      trigger: "axis",
-    },
-    legend: {
-      top: 30,
-    },
-    grid: {
-      left: "3%",
-      right: "4%",
-      bottom: "3%",
-      containLabel: true,
-    },
+const LineRaceChart = ({ series, height = 400 }) => {
+  const option = {
+    tooltip: { trigger: "axis" },
     xAxis: {
-      type: "category",
-      data: categories,
+      type: "time",
+      boundaryGap: false,
     },
     yAxis: {
       type: "value",
+      scale: true,
     },
-    animationDuration,
-    animationEasing: "linear",
     series,
   };
 
   return (
-    <ReactECharts
-      option={options}
-      style={{ height, width: "100%" }}
-      notMerge
-      lazyUpdate
-    />
+    <ReactECharts option={option} style={{ height, width: "100%" }} notMerge />
   );
 };
 

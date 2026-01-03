@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   InlineLoader,
   SkeletonCard,
   SkeletonTable,
   SkeletonTokenCard,
+  TransactionHistoryChart,
 } from "../components";
 /* ===================== COMPONENTS & ASSETS ===================== */
 import { DoughnutChart, LineRaceChart, Pagination, Table } from "../components";
-import { NFT } from "../assets";
 
 /* ===================== API HOOKS ===================== */
 import {
@@ -22,7 +23,6 @@ import {
   useLazyGetBalancesQuery,
   useLazyGetTransactionHistoryQuery,
 } from "../feature/CovalentSlice";
-import { usePrivy } from "@privy-io/react-auth";
 
 /* =============================================================== */
 
@@ -548,11 +548,15 @@ const Portfolio = () => {
               Wallet Retention Score
             </h2>
             <div className="w-full">
-              <LineRaceChart
+              {/* <LineRaceChart
                 title="Market Performance Race"
                 categories={raceData.categories}
                 series={raceData.series}
                 height={400}
+              /> */}
+              {/* <TransactionHistoryChart address={walletAddress} /> */}
+              <TransactionHistoryChart
+                address={"0x3ddfa8ec3052539b6c9549f12cea2c295cff5296"}
               />
             </div>
           </div>

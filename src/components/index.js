@@ -11,3 +11,4 @@ export { default as SkeletonCard } from "./SkeletonCard";
 export { default as SkeletonTokenCard } from "./SkeletonTokenCard";
 export { default as SkeletonTable } from "./SkeletonTable";
 export { default as InlineLoader } from "./InlineLoader";
+export { default as TransactionHistoryChart } from "./TransactionHistoryChart";
