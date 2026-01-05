@@ -1,7 +1,50 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FaArrowTrendDown, FaArrowTrendUp } from "react-icons/fa6";
-import { CandlestickBrushChart, Chart, Table } from "../components";
+import {
+  CandlestickBrushChart,
+  Pagination,
+  SkeletonTable,
+  Table,
+} from "../components";
+import { useGetTopTokenHolderQuery } from "../feature/ChainbaseSlice";
+import { useGetTokenScreenerQuery } from "../feature/NansenSlice";
 const Dashboard = () => {
+  const DEFAULT_CONTRACT = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+  const PAGE_SIZE = 10;
+  const [timeframe, setTimeframe] = useState("5m");
+  const [page, setPage] = useState(0);
+  const [singleCurrentPage, setSingleCurrentPage] = useState(0);
+  const [inputAddress, setInputAddress] = useState(DEFAULT_CONTRACT);
+  const [contractAddress, setContractAddress] = useState(DEFAULT_CONTRACT);
+  const { data, isLoading, error } = useGetTopTokenHolderQuery(
+    {
+      address: contractAddress,
+      page: singleCurrentPage + 1,
+      limit: PAGE_SIZE,
+    },
+    { skip: !contractAddress }
+  );
+  const {
+    data: TokenscreenerData,
+    isLoading: tokenScreenerIsLoading,
+    error: tokenScreenerError,
+  } = useGetTokenScreenerQuery({
+    chains: ["arbitrum"],
+    timeframe,
+    page: page + 1,
+    perPage: 10,
+    tokenAge: { min: 1, max: 365 },
+    onlySmartMoney: true,
+    orderBy: [{ field: "chain", direction: "ASC" }],
+  });
+  console.log("Token Screener Data :", {
+    TokenscreenerData,
+    tokenScreenerError,
+    tokenScreenerIsLoading,
+  });
+  console.log("Top Token Holder Data:", data);
+  console.log("RTK fired", { data, error, isLoading });
+  const TIMEFRAMES = ["5m", "10m", "1h", "6h", "24h", "7d", "30d"];
   const MetricsData = [
     {
       id: 1,
@@ -41,6 +84,23 @@ const Dashboard = () => {
     },
   ];
   const [activeTab, setActiveTab] = useState("new wallet");
+
+  const topHoldersTableData = useMemo(() => {
+    if (!data?.data) return [];
+
+    return data.data.map((item, index) => ({
+      id: singleCurrentPage * PAGE_SIZE + index + 1,
+      amount: Number(item.amount).toLocaleString(),
+      usdValue: `$${Number(item.usd_value).toLocaleString()}`,
+      address: item.wallet_address,
+    }));
+  }, [data, singleCurrentPage]);
+
+  const singleTotalPages = useMemo(() => {
+    if (!data?.count) return 0;
+    return Math.ceil(data.count / PAGE_SIZE);
+  }, [data]);
+
   const activeWalletCol = [
     {
       header: "S/N",
@@ -267,18 +327,6 @@ const Dashboard = () => {
       lastActive: "2 mins ago",
     },
   ];
-  const dummyAreaData = [
-    { time: "2024-01-01", value: 1200000000 },
-    { time: "2024-01-05", value: 1255000000 },
-    { time: "2024-01-10", value: 1232000000 },
-    { time: "2024-01-15", value: 1288000000 },
-    { time: "2024-01-20", value: 1315000000 },
-    { time: "2024-01-25", value: 1342000000 },
-    { time: "2024-02-01", value: 1389000000 },
-    { time: "2024-02-05", value: 1401000000 },
-    { time: "2024-02-10", value: 1427000000 },
-    { time: "2024-02-15", value: 1453000000 },
-  ];
 
   const candlestickData = [
     { time: "2024-01-01", open: 120, close: 125, low: 118, high: 130 },
@@ -316,6 +364,25 @@ const Dashboard = () => {
     { time: "2024-01-07", open: 129, close: 134, low: 128, high: 138 },
   ];
 
+  const topHolderColumns = [
+    {
+      header: "S/N",
+      accessor: (row) => row.id,
+    },
+    {
+      header: "Token Amount",
+      accessor: (row) => row.amount,
+    },
+    {
+      header: "USD Value",
+      accessor: (row) => row.usdValue,
+    },
+    {
+      header: "Wallet Address",
+      accessor: (row) => row.address,
+    },
+  ];
+
   return (
     <div className="w-full py-2">
       <h1 className="text-xl md:text-2xl lg:text-3xl font-semibold ">
@@ -343,9 +410,68 @@ const Dashboard = () => {
           </div>
         ))}
       </div>
-      <div className="w-full border border-white bg-black my-10 z-0">
-        <Chart data={dummyAreaData} />
+      <div className="my-10 w-full">
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold capitalize">
+          token top holder
+        </h2>
+        <div className="w-full border border-[#dadada] rounded-lg py-3 mt-6">
+          <div className="w-[95%] md:w-[80%] lg:w-[90%] mx-auto flex items-center gap-3.5">
+            <input
+              type="search"
+              value={inputAddress}
+              onChange={(e) => setInputAddress(e.target.value)}
+              placeholder="Paste contract address..."
+              className="w-[70%] md:w-[85%] border px-4 py-2 rounded-xl"
+            />
+            <button
+              onClick={() => setContractAddress(inputAddress)}
+              className="px-4 py-2 bg-[#ed4d06] text-white cursor-pointer rounded-2xl font-semibold"
+            >
+              Get Result
+            </button>
+          </div>
+          <div className="mt-6">
+            {isLoading ? (
+              <SkeletonTable rows={8} columns={4} />
+            ) : (
+              <Table columns={topHolderColumns} data={topHoldersTableData} />
+            )}
+          </div>
+          {!isLoading && !error && singleTotalPages > 1 && (
+            <div className="mt-6 flex justify-end w-[95%] mx-auto">
+              <Pagination
+                total={singleTotalPages}
+                onChange={({ selected }) => setSingleCurrentPage(selected)}
+              />
+            </div>
+          )}
+        </div>
       </div>
+
+      <div className="mb-10 w-full">
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold capitalize">
+          token screener
+        </h2>
+        <div className="mt-5">
+          <div className="flex gap-2">
+            {TIMEFRAMES.map((tf) => (
+              <button
+                key={tf}
+                onClick={() => {
+                  setPage(0);
+                  setTimeframe(tf);
+                }}
+                className={`px-3 py-1 rounded ${
+                  timeframe === tf ? "bg-orange-600 text-white" : "bg-gray-100"
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-semibold capitalize">
           User & Wallet insight
