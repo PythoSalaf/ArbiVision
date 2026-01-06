@@ -3,10 +3,9 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const nansenApi = createApi({
   reducerPath: "nansenApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://api.nansen.ai/v1",
+    baseUrl: "https://api.nansen.ai/api/v1",
     prepareHeaders: (headers) => {
-      headers.set("x-api-key", import.meta.env.VITE_NANSEN_API_KEY);
-      headers.set("Accept", "application/json");
+      headers.set("apiKey", "U5SDLzkRkCa2yJa0Y2zVqJJSAqRRkHWf");
       headers.set("Content-Type", "application/json");
       return headers;
     },
@@ -16,11 +15,10 @@ export const nansenApi = createApi({
     getTokenScreener: builder.query({
       query: ({
         chains = ["arbitrum"],
-        timeframe = "5m",
+        timeframe = "10m",
         page = 1,
-        perPage = 10,
+        per_Page = 10,
         tokenAge = { min: 1, max: 365 },
-        onlySmartMoney = true,
         orderBy = [{ field: "chain", direction: "ASC" }],
       }) => ({
         url: "/token-screener",
@@ -30,13 +28,12 @@ export const nansenApi = createApi({
           timeframe,
           pagination: {
             page,
-            per_page: perPage,
+            per_page: per_Page,
           },
           filters: {
             token_age_days: {
               min: tokenAge.min,
               max: tokenAge.max,
-              only_smart_money: onlySmartMoney,
             },
           },
           order_by: orderBy,

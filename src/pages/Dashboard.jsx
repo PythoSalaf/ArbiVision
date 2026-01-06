@@ -32,9 +32,8 @@ const Dashboard = () => {
     chains: ["arbitrum"],
     timeframe,
     page: page + 1,
-    perPage: 10,
+    per_page: 10,
     tokenAge: { min: 1, max: 365 },
-    onlySmartMoney: true,
     orderBy: [{ field: "chain", direction: "ASC" }],
   });
   console.log("Token Screener Data :", {
