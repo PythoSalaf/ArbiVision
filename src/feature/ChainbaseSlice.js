@@ -17,7 +17,12 @@ export const chainbaseApi = createApi({
         `/token/top-holders?chain_id=42161&contract_address=${address}&page=${page}&limit=${limit}`,
       providesTags: ["TopTokenHolders"],
     }),
+    getBlockchainMetrics: builder.query({
+      query: () => `/block/number/latest?chain_id=42161`,
+      providesTags: ["BlockchainMetrics"],
+    }),
   }),
 });
 
-export const { useGetTopTokenHolderQuery } = chainbaseApi;
+export const { useGetTopTokenHolderQuery, useGetBlockchainMetricsQuery } =
+  chainbaseApi;
