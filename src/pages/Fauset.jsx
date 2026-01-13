@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
 
 const Fauset = () => {
-  const [address] = useState("");
+  const { user } = usePrivy();
+  const address = user?.wallets?.address;
+  console.log("User Address:", address);
   return (
     <div className="w-full h-screen">
       <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold capitalize">
@@ -14,7 +16,7 @@ const Fauset = () => {
             className="border w-full py-2.5 outline-0 px-4 text-white"
             placeholder="Enter wallet address"
           />
-          {!address ? (
+          {address ? (
             <button className="bg-white text-black px-6 cursor-pointer py-2.5 mt-6 font-semibold rounded-md">
               Connect wallet
             </button>
