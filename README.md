@@ -14,7 +14,7 @@ All in one clean, modern, and responsive interface.
 
 📦 **GitHub Repository**: [https://github.com/PythoSalaf/ArbiVision](https://github.com/PythoSalaf/ArbiVision)
 
-## ✨ Key Features
+## Key Features
 
 - **Arbitrum Chain Overview**  
   Real-time & historical metrics: TVL, TPS, daily active users, gas prices, transaction volume, bridge flows, ecosystem growth trends.
@@ -33,7 +33,7 @@ All in one clean, modern, and responsive interface.
   - User activity metrics
 
 - **Arbitrum Testnet Faucet**  
-  Request testnet ETH/ARB tokens directly from the dashboard — perfect for developers building & testing on Arbitrum Sepolia.
+  Request testnet ETH/ARB tokens directly from the dashboard  perfect for developers building & testing on Arbitrum Sepolia.
 
 - **Beautiful Visualizations**  
   Interactive charts (line graphs for trends, bar charts for comparisons, heatmaps for wallet activity) built with modern charting libraries.
@@ -41,7 +41,7 @@ All in one clean, modern, and responsive interface.
 - **Multi-API Reliability**  
   Aggregates high-quality data from multiple best-in-class providers for accuracy, speed, and redundancy.
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 - **Frontend**: React + Vite  
 - **Styling**: Tailwind CSS + shadcn/ui  
@@ -66,7 +66,7 @@ src/
 └── App.tsx / main.tsx              # Application entry points
 
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js ≥ 18  
@@ -82,13 +82,13 @@ pnpm install
 # or
 npm install
 
-## **Environment Variables**
+## Environment Variables
 ### Create .env.local in the root:
 
-**VITE_DUNE_API_KEY=your_dune_key
+VITE_DUNE_API_KEY=your_dune_key
 VITE_CHAINBASE_API_KEY=your_chainbase_key
 VITE_COVALENT_API_KEY=your_covalent_key
-VITE_MOBULA_API_KEY=your_mobula_key**
+VITE_MOBULA_API_KEY=your_mobula_key
 
 
 
