@@ -204,8 +204,6 @@ const Dashboard = () => {
     return Math.ceil(holdersData.count / PAGE_SIZE);
   }, [holdersData]);
 
-  /* ----------------------------------- JSX ----------------------------------- */
-
   return (
     <div className="w-full py-2">
       {/* ============================== METRICS ============================== */}

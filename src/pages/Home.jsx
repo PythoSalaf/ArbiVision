@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router";
+import { Hero } from "../assets";
 
 const Home = () => {
   const navigate = useNavigate();
   return (
     <div className="w-full">
-      <div className="w-[96%] mt-16 md:w-[94%] mx-auto flex items-start justify-between flex-col md:flex-row gap-y-7 md:gap-y-0">
+      <div className="w-[96%] mt-16 md:w-[94%] mx-auto flex items-start justify-between flex-col md:flex-row gap-7 md:gap-0 md:gap-x-9">
         <div className="w-full md:w-[50%] ">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold md:leading-12 lg:leading-14">
             Unlock Deep, Real‑Time Intelligence Across the Arbitrum Ecosystem
@@ -22,7 +23,9 @@ const Home = () => {
             Start Analyzing
           </button>
         </div>
-        <div className="w-full md:w-[50%]"></div>
+        <div className="w-full md:w-[50%] h-full pb-1 md:pb-0">
+          <img src={Hero} alt="hero-image" />
+        </div>
       </div>
     </div>
   );

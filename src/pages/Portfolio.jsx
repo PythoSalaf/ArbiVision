@@ -41,7 +41,8 @@ const Portfolio = () => {
   const [singleMappedNfts, setSingleMappedNfts] = useState([]);
   const { user, authenticated } = usePrivy();
   const walletAddress = user?.wallet?.address || null;
-
+  // 0x0f85f1523666118eb752eec4a6f763776f4b5693
+  // 0x3ddfa8ec3052539b6c9549f12cea2c295cff5296
   const ipfsToHttp = (uri) => {
     if (!uri) return null;
     return uri.startsWith("ipfs://")
@@ -88,7 +89,7 @@ const Portfolio = () => {
   /* ===================== DEFAULT WALLET QUERIES ===================== */
 
   const { data: covalentData, isLoading } = useGetBalancesQuery({
-    address: `${walletAddress}`,
+    address: `0x3ddfa8ec3052539b6c9549f12cea2c295cff5296`,
   });
 
   const { data: transactionData, isLoading: transLoading } =
